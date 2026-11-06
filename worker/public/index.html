@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Hand secrets to your AI agent's sandbox. End-to-end encrypted, burn after reading, never echoed.">
+  <title>envclip — secrets for agents</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <a class="logo" href="/" aria-label="envclip">env<span>clip</span><i class="cursor"></i></a>
+    <nav>
+      <button class="lang" data-lang="en" type="button">EN</button><span class="sep">/</span><button class="lang" data-lang="zh" type="button">中文</button>
+      <a class="gh" href="https://github.com/mirrorange/envclip" rel="noopener" data-i18n="source">source</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1 data-i18n="tagline">Hand secrets to your AI agent. Not to the chat.</h1>
+      <p class="dim" data-i18n="sub">Encrypted in your browser · burn after reading · never echoed</p>
+    </section>
+
+    <!-- compose ─────────────────────────────────────────── -->
+    <section class="term" id="compose">
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="prompt">$ envclip send</span><span class="title" data-i18n="compose">new drop</span></div>
+      <form class="body" id="compose-form" autocomplete="off" novalidate>
+        <div id="rows" class="rows"></div>
+        <div class="tools">
+          <button type="button" class="ghost" id="add" data-i18n="add">+ variable</button>
+          <button type="button" class="ghost" id="paste-toggle" data-i18n="paste">paste .env</button>
+        </div>
+        <div id="paste-box" class="paste" hidden>
+          <textarea id="paste" rows="6" spellcheck="false" data-i18n-ph="paste_ph"></textarea>
+          <div class="tools">
+            <button type="button" class="ghost" id="paste-import" data-i18n="import">import</button>
+            <button type="button" class="ghost" id="paste-cancel" data-i18n="cancel">cancel</button>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="ttl" role="radiogroup">
+            <span class="dim" data-i18n="ttl">expires in</span>
+            <label><input type="radio" name="ttl" value="600"><span>10m</span></label>
+            <label><input type="radio" name="ttl" value="3600"><span>1h</span></label>
+            <label><input type="radio" name="ttl" value="86400" checked><span>24h</span></label>
+            <label><input type="radio" name="ttl" value="604800"><span>7d</span></label>
+          </div>
+          <button type="submit" class="primary" id="seal"><span data-i18n="seal">seal &amp; upload</span> <kbd>⏎</kbd></button>
+        </div>
+        <p class="msg" id="compose-msg" role="status"></p>
+      </form>
+    </section>
+
+    <!-- result ──────────────────────────────────────────── -->
+    <section class="term" id="result" hidden>
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="prompt">$ envclip send</span><span class="title ok" id="sealed-line"></span></div>
+      <div class="body">
+        <dl class="kv">
+          <dt data-i18n="link">link</dt><dd><code id="out-link"></code><button type="button" class="copy" data-copy="out-link" data-i18n="copy">copy</button></dd>
+          <dt data-i18n="key">key</dt><dd><code id="out-key" class="secret"></code><button type="button" class="copy" data-copy="out-key" data-i18n="copy">copy</button></dd>
+        </dl>
+        <p class="warn" data-i18n="key_warn"></p>
+        <div class="handoff">
+          <div class="label"><span>── <span data-i18n="handoff">paste to your agent</span></span><button type="button" class="copy" data-copy="out-msg" data-i18n="copy_handoff">copy message</button></div>
+          <pre id="out-msg"></pre>
+        </div>
+        <div class="tools">
+          <button type="button" class="ghost" id="r-status" data-i18n="status">status</button>
+          <button type="button" class="ghost danger" id="r-revoke" data-i18n="revoke">revoke</button>
+          <button type="button" class="ghost" id="r-again" data-i18n="again">new drop</button>
+        </div>
+        <p class="msg" id="result-msg" role="status"></p>
+      </div>
+    </section>
+
+    <!-- drop landing (/c/:id in a browser) ──────────────── -->
+    <section class="term" id="drop" hidden>
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="prompt">$ envclip claim</span><span class="title"><span data-i18n="drop">drop</span> <span id="drop-id"></span></span></div>
+      <div class="body">
+        <p data-i18n="drop_intro">This link is meant for an AI agent's sandbox. The agent should run:</p>
+        <pre id="drop-cmd"></pre>
+        <p class="dim" data-i18n="drop_sender">Sent this? Check or revoke it with your key:</p>
+        <form class="inline" id="drop-form" autocomplete="off">
+          <input id="drop-key" type="password" spellcheck="false" data-i18n-ph="key_ph">
+          <button type="submit" class="ghost" id="d-status" data-i18n="status">status</button>
+          <button type="button" class="ghost danger" id="d-revoke" data-i18n="revoke">revoke</button>
+        </form>
+        <p class="msg" id="drop-msg" role="status"></p>
+      </div>
+    </section>
+
+    <!-- how ─────────────────────────────────────────────── -->
+    <section class="how">
+      <h2><span class="hash">#</span> <span data-i18n="how">how it works</span></h2>
+      <ol>
+        <li><b>01</b><h3 data-i18n="s1t">seal</h3><p data-i18n="s1"></p></li>
+        <li><b>02</b><h3 data-i18n="s2t">hand off</h3><p data-i18n="s2"></p></li>
+        <li><b>03</b><h3 data-i18n="s3t">claim</h3><p data-i18n="s3"></p></li>
+        <li><b>04</b><h3 data-i18n="s4t">use</h3><p data-i18n="s4"></p></li>
+      </ol>
+    </section>
+
+    <section class="cli">
+      <h2><span class="hash">#</span> <span data-i18n="cli">cli</span></h2>
+      <p class="dim" data-i18n="cli_note"></p>
+      <pre><span class="c"># <span data-i18n="c1">install</span></span>
+<span class="p">$</span> curl -fsSL <span class="origin"></span>/install.sh | sh
+<span class="c"># <span data-i18n="c2">send variables straight from your shell</span></span>
+<span class="p">$</span> envclip send OPENAI_API_KEY GITEA_TOKEN --ttl 1h
+<span class="c"># <span data-i18n="c3">inside the agent sandbox</span></span>
+<span class="p">$</span> envclip run -- git push
+<span class="p">$</span> eval "$(envclip env)" &amp;&amp; ./test-api.sh</pre>
+    </section>
+  </main>
+
+  <footer><span data-i18n="foot">zero-knowledge · AES-256-GCM · HKDF-SHA256 · Cloudflare Workers + D1</span> · MIT</footer>
+</body>
+</html>
