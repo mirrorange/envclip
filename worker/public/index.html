@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Hand secrets to your AI agent, not to the chat. End-to-end encrypted, burn after reading.">
+  <title>envclip — secrets for agents</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/style.css">
+  <script type="module" src="/assets/app.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="logo" href="/">envclip<span class="cursor">_</span></a>
+    <nav>
+      <a href="https://github.com/mirrorange/envclip" rel="noopener">github</a>
+      <button class="link" id="lang" data-i18n="nav.lang">中文</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1 data-i18n="hero.title">Hand secrets to your agent.<br>Not to the chat.</h1>
+      <p data-i18n="hero.sub"></p>
+    </section>
+
+    <section class="panel" id="compose">
+      <div class="panel-head">
+        <span class="prompt">$</span> <span data-i18n="compose.title">new clip</span>
+        <span class="muted" data-i18n="compose.hint"></span>
+      </div>
+
+      <div id="rows" class="rows"></div>
+
+      <div class="tools">
+        <button class="ghost" id="add" data-i18n="compose.add">+ variable</button>
+        <button class="ghost" id="import" data-i18n="compose.import">import .env</button>
+      </div>
+
+      <div id="importer" class="importer" hidden>
+        <textarea id="dotenv" rows="6" spellcheck="false" autocomplete="off" data-i18n-ph="compose.paste"></textarea>
+        <button class="ghost" id="parse" data-i18n="compose.parse">parse</button>
+      </div>
+
+      <div class="foot-row">
+        <div class="ttl" role="radiogroup">
+          <span class="muted" data-i18n="compose.ttl">expires in</span>
+          <label><input type="radio" name="ttl" value="600"><span data-i18n="ttl.10m">10m</span></label>
+          <label><input type="radio" name="ttl" value="3600" checked><span data-i18n="ttl.1h">1h</span></label>
+          <label><input type="radio" name="ttl" value="86400"><span data-i18n="ttl.1d">1d</span></label>
+          <label><input type="radio" name="ttl" value="604800"><span data-i18n="ttl.7d">7d</span></label>
+        </div>
+        <button class="primary" id="seal"><span data-i18n="compose.seal">seal</span> →</button>
+      </div>
+      <p class="error" id="error" role="alert"></p>
+    </section>
+
+    <section class="panel" id="result" hidden>
+      <div class="panel-head">
+        <span class="ok">✓</span> <span data-i18n="result.title">sealed</span>
+        <code id="r-id" class="muted"></code>
+        <span class="status" id="r-status"><i></i><span></span></span>
+      </div>
+
+      <dl class="fields">
+        <dt data-i18n="result.link">link</dt>
+        <dd><code id="r-link"></code><button class="ghost sm" data-copy="r-link" data-i18n="result.copy">copy</button></dd>
+        <dt data-i18n="result.key">key</dt>
+        <dd>
+          <code id="r-key" class="secret"></code>
+          <button class="ghost sm" id="r-reveal" data-i18n="result.show">show</button>
+          <button class="ghost sm" data-copy="r-key" data-i18n="result.copy">copy</button>
+        </dd>
+      </dl>
+
+      <div class="prompt-head">
+        <span data-i18n="result.prompt">paste this to your agent</span>
+        <button class="primary sm" data-copy="r-prompt" data-i18n="result.copy">copy</button>
+      </div>
+      <pre id="r-prompt" class="term"></pre>
+      <p class="muted small" data-i18n="result.note"></p>
+
+      <div class="tools">
+        <button class="ghost danger" id="r-revoke" data-i18n="result.revoke">revoke</button>
+        <button class="ghost" id="r-new" data-i18n="result.new">new clip</button>
+      </div>
+    </section>
+
+    <section class="how">
+      <h2 data-i18n="how.title">how it works</h2>
+      <ol>
+        <li><b>01</b><h3 data-i18n="how.1.t">seal</h3><p data-i18n="how.1.d"></p></li>
+        <li><b>02</b><h3 data-i18n="how.2.t">share</h3><p data-i18n="how.2.d"></p></li>
+        <li><b>03</b><h3 data-i18n="how.3.t">open</h3><p data-i18n="how.3.d"></p></li>
+        <li><b>04</b><h3 data-i18n="how.4.t">use</h3><p data-i18n="how.4.d"></p></li>
+      </ol>
+    </section>
+
+    <section class="cli">
+      <h2 data-i18n="cli.title">cli</h2>
+      <p data-i18n="cli.d"></p>
+      <pre class="term"><span class="c">$</span> curl -fsSL <span class="origin"></span>/install.sh | sh
+<span class="c">$</span> envclip push API_TOKEN DATABASE_URL --ttl 1h</pre>
+    </section>
+  </main>
+
+  <footer>
+    <span>AES-256-GCM · HKDF-SHA256 · Cloudflare D1</span>
+    <span data-i18n="foot.tag">zero-knowledge · burn after reading · no echo</span>
+  </footer>
+
+  <template id="row-tpl">
+    <div class="row">
+      <input class="k" spellcheck="false" autocomplete="off" autocapitalize="characters" data-i18n-ph="compose.name">
+      <span class="eq">=</span>
+      <input class="v" type="password" spellcheck="false" autocomplete="off" data-i18n-ph="compose.value">
+      <button class="icon eye" tabindex="-1" aria-label="toggle visibility">◐</button>
+      <button class="icon del" tabindex="-1" aria-label="remove">×</button>
+    </div>
+  </template>
+</body>
+</html>
