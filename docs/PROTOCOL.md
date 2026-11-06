@@ -72,6 +72,7 @@ All bodies are JSON. Errors are `{"error": "<code>"}`.
   statement, so exactly one caller can ever receive the blob.
 * Unknown id, expired clip, already opened clip and wrong key all return
   `404 {"error":"not_found"}`. The server does not reveal which one it was.
+* Non-`GET` API calls are rate limited per IP (`429 {"error":"rate_limited"}`).
 * A cron trigger removes expired rows every hour.
 
 ## Delivery endpoints
