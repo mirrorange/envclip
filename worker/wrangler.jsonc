@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "envclip",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/c/*", "/dl/*", "/install.sh"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "envclip",
+      // `npx wrangler d1 create envclip`, then paste the id here.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ratelimits": [
+    { "name": "CREATE_LIMIT", "namespace_id": "4201", "simple": { "limit": 20, "period": 60 } },
+    { "name": "CLAIM_LIMIT", "namespace_id": "4202", "simple": { "limit": 60, "period": 60 } }
+  ],
+  // Purge expired ciphertext even if nobody ever touches it again.
+  "triggers": { "crons": ["*/15 * * * *"] },
+  "vars": {
+    // Where `/dl/<asset>` redirects to. Assets are produced by .github/workflows/release.yml.
+    "RELEASES_URL": "https://github.com/mirrorange/envclip/releases/latest/download"
+  },
+  // No request logs: envclip should not even know who talked to whom.
+  "observability": { "enabled": false }
+}
