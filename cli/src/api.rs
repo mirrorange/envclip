@@ -96,7 +96,10 @@ impl Client {
             200..=299 => Ok((code, body)),
             404 => Err(Error::NotFound),
             _ => {
-                let msg = serde_json::from_str::<ApiError>(&body).map(|e| e.error).unwrap_or(body);
+                // Non-JSON bodies (proxies, HTML error pages) are noise; keep the status only.
+                let msg = serde_json::from_str::<ApiError>(&body)
+                    .map(|e| e.error)
+                    .unwrap_or_else(|_| crate::i18n::tr("unexpected response", "意外的响应").to_string());
                 Err(Error::Server(code, msg))
             }
         }
