@@ -28,7 +28,9 @@ type R<T = ()> = Result<T, String>;
 
 // ── arguments ──────────────────────────────────────────────────────────────
 
-const VALUE_FLAGS: &[&str] = &["--server", "--lang", "--ttl", "--key", "--hold", "--file", "-f"];
+const VALUE_FLAGS: &[&str] = &[
+    "--server", "--lang", "--ttl", "--key", "--hold", "--file", "-f",
+];
 
 #[derive(Default)]
 struct Args {
@@ -60,10 +62,16 @@ impl Args {
                 if !VALUE_FLAGS.contains(&name.as_str()) {
                     return Err(t!("unknown option {}", "未知选项 {}", name));
                 }
-                let name = if name == "-f" { "--file".to_string() } else { name };
+                let name = if name == "-f" {
+                    "--file".to_string()
+                } else {
+                    name
+                };
                 let value = match inline {
                     Some(v) => v,
-                    None => it.next().ok_or_else(|| t!("{} needs a value", "{} 需要一个值", name))?,
+                    None => it
+                        .next()
+                        .ok_or_else(|| t!("{} needs a value", "{} 需要一个值", name))?,
                 };
                 a.flags.push((name, value));
             } else if a.cmd.is_empty() {
@@ -76,7 +84,11 @@ impl Args {
     }
 
     fn flag(&self, name: &str) -> Option<&str> {
-        self.flags.iter().rev().find(|(n, _)| n == name).map(|(_, v)| v.as_str())
+        self.flags
+            .iter()
+            .rev()
+            .find(|(n, _)| n == name)
+            .map(|(_, v)| v.as_str())
     }
 
     fn only(&self, allowed: &[&str]) -> R {
@@ -113,7 +125,11 @@ fn server(a: &Args) -> R<String> {
     };
     a.flag("--server")
         .map(str::to_string)
-        .or_else(|| std::env::var("ENVCLIP_SERVER").ok().filter(|s| !s.is_empty()))
+        .or_else(|| {
+            std::env::var("ENVCLIP_SERVER")
+                .ok()
+                .filter(|s| !s.is_empty())
+        })
         .or_else(from_file)
         .or_else(|| option_env!("ENVCLIP_DEFAULT_SERVER").map(str::to_string))
         .map(|s| s.trim_end_matches('/').to_string())
@@ -127,12 +143,21 @@ fn server(a: &Args) -> R<String> {
 
 /// `https://host/s/<id>` or a bare `<id>` → (server, id)
 fn target(a: &Args) -> R<(String, String)> {
-    let raw = a.pos.first().ok_or_else(|| t!("missing link or id", "缺少链接或 id"))?;
-    let raw = raw.split(['#', '?']).next().unwrap_or_default().trim_end_matches('/');
+    let raw = a
+        .pos
+        .first()
+        .ok_or_else(|| t!("missing link or id", "缺少链接或 id"))?;
+    let raw = raw
+        .split(['#', '?'])
+        .next()
+        .unwrap_or_default()
+        .trim_end_matches('/');
     let (base, id) = match raw.rsplit_once("/s/") {
-        Some((base, id)) if base.starts_with("https://") || base.starts_with("http://") => {
-            (a.flag("--server").map_or_else(|| base.to_string(), str::to_string), id)
-        }
+        Some((base, id)) if base.starts_with("https://") || base.starts_with("http://") => (
+            a.flag("--server")
+                .map_or_else(|| base.to_string(), str::to_string),
+            id,
+        ),
         _ => (server(a)?, raw),
     };
     let id = id.to_ascii_lowercase();
@@ -147,7 +172,10 @@ fn read_key(a: &Args) -> R<Key> {
         Some(k) => k.to_string(),
         None if !std::io::stdin().is_terminal() => {
             let mut s = String::new();
-            std::io::stdin().lock().read_line(&mut s).map_err(|e| e.to_string())?;
+            std::io::stdin()
+                .lock()
+                .read_line(&mut s)
+                .map_err(|e| e.to_string())?;
             s
         }
         None => rpassword::prompt_password(t!("key › ", "密钥 › ")).map_err(|e| e.to_string())?,
@@ -163,14 +191,22 @@ fn prompt_vars() -> R<Vars> {
     let p = Paint::stderr();
     eprintln!(
         "{}",
-        p.dim(&t!("enter variables · values are hidden · empty name to finish", "输入变量 · 值不回显 · 变量名留空结束"))
+        p.dim(&t!(
+            "enter variables · values are hidden · empty name to finish",
+            "输入变量 · 值不回显 · 变量名留空结束"
+        ))
     );
     let mut vars = Vars::new();
     loop {
         eprint!("  {} ", p.green(&t!("name  ›", "变量名 ›")));
         let _ = std::io::stderr().flush();
         let mut name = String::new();
-        if std::io::stdin().lock().read_line(&mut name).map_err(|e| e.to_string())? == 0 {
+        if std::io::stdin()
+            .lock()
+            .read_line(&mut name)
+            .map_err(|e| e.to_string())?
+            == 0
+        {
             break;
         }
         let name = name.trim().to_string();
@@ -181,8 +217,9 @@ fn prompt_vars() -> R<Vars> {
             eprintln!("  {}", p.red(&t!("bad name {}", "变量名无效 {}", name)));
             continue;
         }
-        let value = rpassword::prompt_password(format!("  {} ", p.green(&t!("value ›", "值     ›"))))
-            .map_err(|e| e.to_string())?;
+        let value =
+            rpassword::prompt_password(format!("  {} ", p.green(&t!("value ›", "值     ›"))))
+                .map_err(|e| e.to_string())?;
         vars.push((name, value));
     }
     Ok(vars)
@@ -218,7 +255,10 @@ fn push(a: &Args) -> R {
     a.only(&["--ttl", "--file"])?;
     let ttl = a.duration("--ttl", DEFAULT_TTL)?;
     if !(MIN_TTL..=MAX_TTL).contains(&ttl) {
-        return Err(t!("--ttl must be between 1m and 7d", "--ttl 须在 1m 到 7d 之间"));
+        return Err(t!(
+            "--ttl must be between 1m and 7d",
+            "--ttl 须在 1m 到 7d 之间"
+        ));
     }
     let base = server(a)?;
 
@@ -230,7 +270,11 @@ fn push(a: &Args) -> R {
         match std::env::var(name) {
             Ok(v) => vars.push((name.clone(), v)),
             Err(std::env::VarError::NotPresent) => {
-                return Err(t!("{} is not set in this shell", "当前 shell 中未设置 {}", name))
+                return Err(t!(
+                    "{} is not set in this shell",
+                    "当前 shell 中未设置 {}",
+                    name
+                ))
             }
             Err(_) => return Err(t!("{} is not valid UTF-8", "{} 不是有效的 UTF-8", name)),
         }
@@ -238,7 +282,9 @@ fn push(a: &Args) -> R {
     let read_dotenv = |src: &str| -> R<Vars> {
         let mut text = String::new();
         if src == "-" {
-            std::io::stdin().read_to_string(&mut text).map_err(|e| e.to_string())?;
+            std::io::stdin()
+                .read_to_string(&mut text)
+                .map_err(|e| e.to_string())?;
         } else {
             text = std::fs::read_to_string(src).map_err(|e| format!("{src}: {e}"))?;
         }
@@ -250,7 +296,11 @@ fn push(a: &Args) -> R {
         vars.extend(read_dotenv(f)?);
     }
     if a.pos.is_empty() && a.flag("--file").is_none() {
-        vars = if std::io::stdin().is_terminal() { prompt_vars()? } else { read_dotenv("-")? };
+        vars = if std::io::stdin().is_terminal() {
+            prompt_vars()?
+        } else {
+            read_dotenv("-")?
+        };
     }
     if vars.is_empty() {
         return Err(t!("nothing to send", "没有要发送的变量"));
@@ -295,9 +345,15 @@ fn push(a: &Args) -> R {
     eprintln!("  {}  {}", p.dim(&t!("link", "链接")), link);
     eprintln!("  {}  {}", p.dim(&t!("key ", "密钥")), key);
     eprintln!();
-    eprintln!("{}", p.dim(&t!("── paste this to your agent ──", "── 发送给 Agent ──")));
+    eprintln!(
+        "{}",
+        p.dim(&t!("── paste this to your agent ──", "── 发送给 Agent ──"))
+    );
     eprintln!();
-    println!("{}", agent_prompt(&format!("curl -fsSL {link} | sh -s -- {key}")));
+    println!(
+        "{}",
+        agent_prompt(&format!("curl -fsSL {link} | sh -s -- {key}"))
+    );
     Ok(())
 }
 
@@ -316,7 +372,9 @@ fn open(a: &Args) -> R {
     let (base, id) = target(a)?;
     let key = read_key(a)?;
     let client = Client::new(&base);
-    let blob = client.open(&id, &key.auth_token()).map_err(|e| e.describe(client.base()))?;
+    let blob = client
+        .open(&id, &key.auth_token())
+        .map_err(|e| e.describe(client.base()))?;
     let vars = crypto::unseal(&id, &key, &blob).map_err(|_| {
         t!(
             "decryption failed; the clip is burned. ask the sender for a new one",
@@ -329,7 +387,9 @@ fn open(a: &Args) -> R {
     agent::ensure(&sock, hold).map_err(agent_err)?;
     let r = agent::request(&sock, &Req::Put { vars }).map_err(agent_err)?;
     if !r.ok {
-        return Err(agent_err(std::io::Error::other(r.error.unwrap_or_default())));
+        return Err(agent_err(std::io::Error::other(
+            r.error.unwrap_or_default(),
+        )));
     }
     let info = agent::request(&sock, &Req::List).map_err(agent_err)?;
 
@@ -337,11 +397,20 @@ fn open(a: &Args) -> R {
     eprintln!(
         "{} {}",
         p.green("✓"),
-        t!("opened {} · burned on the server", "已打开 {} · 服务端已销毁", id)
+        t!(
+            "opened {} · burned on the server",
+            "已打开 {} · 服务端已销毁",
+            id
+        )
     );
     let width = names.iter().map(String::len).max().unwrap_or(0);
     for n in &names {
-        eprintln!("  {}{}  {}", p.bold(n), " ".repeat(width - n.len()), p.dim("••••••••"));
+        eprintln!(
+            "  {}{}  {}",
+            p.bold(n),
+            " ".repeat(width - n.len()),
+            p.dim("••••••••")
+        );
     }
     eprintln!(
         "{}",
@@ -352,10 +421,35 @@ fn open(a: &Args) -> R {
             human_secs(info.expires_at.unwrap_or_default().saturating_sub(now()))
         ))
     );
+    let me = self_name();
     eprintln!();
-    eprintln!("  {}", t!("envclip run -- <command>", "envclip run -- <命令>"));
-    eprintln!("  eval \"$(envclip env)\"");
+    eprintln!("  {}", t!("{} run -- <command>", "{} run -- <命令>", me));
+    eprintln!("  eval \"$({} env)\"", me);
     Ok(())
+}
+
+/// `envclip` if that resolves to this binary on PATH, else the absolute path.
+fn self_name() -> String {
+    let me = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.canonicalize().ok());
+    let on_path = std::env::var_os("PATH").is_some_and(|path| {
+        std::env::split_paths(&path).any(|d| d.join("envclip").canonicalize().ok() == me)
+    });
+    match me {
+        Some(p) if !on_path => {
+            let p = p.to_string_lossy();
+            let plain = p
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"/._-".contains(&b));
+            if plain {
+                p.into_owned()
+            } else {
+                sh_quote(&p)
+            }
+        }
+        _ => "envclip".into(),
+    }
 }
 
 fn revoke(a: &Args) -> R {
@@ -363,8 +457,14 @@ fn revoke(a: &Args) -> R {
     let (base, id) = target(a)?;
     let key = read_key(a)?;
     let client = Client::new(&base);
-    client.revoke(&id, &key.auth_token()).map_err(|e| e.describe(client.base()))?;
-    eprintln!("{} {}", Paint::stderr().green("✓"), t!("revoked {}", "已撤销 {}", id));
+    client
+        .revoke(&id, &key.auth_token())
+        .map_err(|e| e.describe(client.base()))?;
+    eprintln!(
+        "{} {}",
+        Paint::stderr().green("✓"),
+        t!("revoked {}", "已撤销 {}", id)
+    );
     Ok(())
 }
 
@@ -372,8 +472,18 @@ fn revoke(a: &Args) -> R {
 
 fn held(names: &[String]) -> R<Vars> {
     let sock = agent::socket_path();
-    let r: Resp = agent::request(&sock, &Req::Get { names: names.to_vec() })
-        .map_err(|_| t!("nothing held. run `envclip open` first", "当前没有保存的变量。请先运行 `envclip open`"))?;
+    let r: Resp = agent::request(
+        &sock,
+        &Req::Get {
+            names: names.to_vec(),
+        },
+    )
+    .map_err(|_| {
+        t!(
+            "nothing held. run `envclip open` first",
+            "当前没有保存的变量。请先运行 `envclip open`"
+        )
+    })?;
     if !r.ok {
         let missing = r.names.unwrap_or_default().join(", ");
         return Err(t!("not held: {}", "未保存：{}", missing));
@@ -394,7 +504,9 @@ fn env(a: &Args) -> R {
     for (n, v) in &vars {
         out.push_str(&format!("export {}={}\n", n, sh_quote(v)));
     }
-    let res = std::io::stdout().write_all(out.as_bytes()).map_err(|e| e.to_string());
+    let res = std::io::stdout()
+        .write_all(out.as_bytes())
+        .map_err(|e| e.to_string());
     out.zeroize();
     for (_, v) in vars.iter_mut() {
         v.zeroize();
@@ -406,7 +518,10 @@ fn run(a: &Args) -> R {
     a.only(&[])?;
     let cmd = a.rest.as_deref().unwrap_or_default();
     let Some((prog, args)) = cmd.split_first() else {
-        return Err(t!("usage: envclip run [NAME…] -- <command>", "用法：envclip run [NAME…] -- <命令>"));
+        return Err(t!(
+            "usage: envclip run [NAME…] -- <command>",
+            "用法：envclip run [NAME…] -- <命令>"
+        ));
     };
     let vars = held(&a.pos)?;
     let err = Command::new(prog).args(args).envs(vars).exec();
@@ -438,7 +553,11 @@ fn ls(a: &Args) -> R {
 fn clear(a: &Args) -> R {
     a.only(&[])?;
     match agent::request(&agent::socket_path(), &Req::Clear) {
-        Ok(_) => eprintln!("{} {}", Paint::stderr().green("✓"), t!("wiped from memory", "已从内存中清除")),
+        Ok(_) => eprintln!(
+            "{} {}",
+            Paint::stderr().green("✓"),
+            t!("wiped from memory", "已从内存中清除")
+        ),
         Err(_) => eprintln!("{}", t!("nothing held", "当前没有保存的变量")),
     }
     Ok(())
@@ -509,7 +628,10 @@ fn main() -> ExitCode {
         .iter()
         .position(|a| a == "--lang")
         .and_then(|i| argv.get(i + 1).cloned())
-        .or_else(|| argv.iter().find_map(|a| a.strip_prefix("--lang=").map(str::to_string)));
+        .or_else(|| {
+            argv.iter()
+                .find_map(|a| a.strip_prefix("--lang=").map(str::to_string))
+        });
     i18n::init(lang.as_deref());
 
     let result = Args::parse(argv).and_then(|a| {
@@ -529,8 +651,17 @@ fn main() -> ExitCode {
                 println!("envclip {VERSION}");
                 Ok(())
             }
-            "__agent" => agent::serve(a.pos.first().and_then(|s| s.parse().ok()).unwrap_or(DEFAULT_HOLD)),
-            other => Err(t!("unknown command {}. see envclip --help", "未知命令 {}。参见 envclip --help", other)),
+            "__agent" => agent::serve(
+                a.pos
+                    .first()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(DEFAULT_HOLD),
+            ),
+            other => Err(t!(
+                "unknown command {}. see envclip --help",
+                "未知命令 {}。参见 envclip --help",
+                other
+            )),
         }
     });
 

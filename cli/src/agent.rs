@@ -22,7 +22,9 @@ const MAX_LINE: u64 = 4 << 20;
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "lowercase")]
 pub enum Req {
-    Put { vars: Vars },
+    Put {
+        vars: Vars,
+    },
     Get {
         #[serde(default)]
         names: Vec<String>,
@@ -129,7 +131,10 @@ fn shutdown(sock: &Path, store: &Mutex<Store>) -> ! {
 
 fn bind(sock: &Path) -> std::io::Result<UnixListener> {
     if let Some(dir) = sock.parent() {
-        fs::DirBuilder::new().recursive(true).mode(0o700).create(dir)?;
+        fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(dir)?;
         fs::set_permissions(dir, fs::Permissions::from_mode(0o700))?;
     }
     if sock.exists() {
@@ -145,7 +150,9 @@ fn bind(sock: &Path) -> std::io::Result<UnixListener> {
 
 pub fn serve(hold: u64) -> ! {
     let sock = socket_path();
-    let Ok(listener) = bind(&sock) else { std::process::exit(1) };
+    let Ok(listener) = bind(&sock) else {
+        std::process::exit(1)
+    };
     let expires_at = now() + hold;
     let store = Arc::new(Mutex::new(Store { vars: Vars::new() }));
 
@@ -161,14 +168,20 @@ pub fn serve(hold: u64) -> ! {
         let Ok(mut conn) = conn else { continue };
         let _ = conn.set_read_timeout(Some(Duration::from_secs(5)));
         let mut line = String::new();
-        if BufReader::new((&conn).take(MAX_LINE)).read_line(&mut line).is_err() {
+        if BufReader::new((&conn).take(MAX_LINE))
+            .read_line(&mut line)
+            .is_err()
+        {
             continue;
         }
         let parsed = serde_json::from_str::<Req>(&line);
         line.zeroize();
         let mut clear = false;
         let resp = match parsed {
-            Err(e) => Resp { error: Some(e.to_string()), ..Default::default() },
+            Err(e) => Resp {
+                error: Some(e.to_string()),
+                ..Default::default()
+            },
             Ok(req) => {
                 let mut st = store.lock().unwrap_or_else(|e| e.into_inner());
                 match req {
@@ -182,11 +195,17 @@ pub fn serve(hold: u64) -> ! {
                                 None => st.vars.push((n, v)),
                             }
                         }
-                        Resp { ok: true, ..Default::default() }
+                        Resp {
+                            ok: true,
+                            ..Default::default()
+                        }
                     }
                     Req::Get { names } => {
-                        let missing: Vec<_> =
-                            names.iter().filter(|n| !st.vars.iter().any(|(k, _)| k == *n)).cloned().collect();
+                        let missing: Vec<_> = names
+                            .iter()
+                            .filter(|n| !st.vars.iter().any(|(k, _)| k == *n))
+                            .cloned()
+                            .collect();
                         if missing.is_empty() {
                             let vars = st
                                 .vars
@@ -194,9 +213,17 @@ pub fn serve(hold: u64) -> ! {
                                 .filter(|(k, _)| names.is_empty() || names.contains(k))
                                 .cloned()
                                 .collect();
-                            Resp { ok: true, vars: Some(vars), ..Default::default() }
+                            Resp {
+                                ok: true,
+                                vars: Some(vars),
+                                ..Default::default()
+                            }
                         } else {
-                            Resp { names: Some(missing), error: Some("missing".into()), ..Default::default() }
+                            Resp {
+                                names: Some(missing),
+                                error: Some("missing".into()),
+                                ..Default::default()
+                            }
                         }
                     }
                     Req::List => Resp {
@@ -208,7 +235,10 @@ pub fn serve(hold: u64) -> ! {
                     },
                     Req::Clear => {
                         clear = true;
-                        Resp { ok: true, ..Default::default() }
+                        Resp {
+                            ok: true,
+                            ..Default::default()
+                        }
                     }
                 }
             }

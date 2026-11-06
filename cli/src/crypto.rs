@@ -36,7 +36,10 @@ fn random<const N: usize>() -> [u8; N] {
 
 pub fn new_id() -> String {
     // 32 divides 256, so masking keeps the distribution uniform
-    random::<12>().iter().map(|b| ID_ALPHABET[(b & 31) as usize] as char).collect()
+    random::<12>()
+        .iter()
+        .map(|b| ID_ALPHABET[(b & 31) as usize] as char)
+        .collect()
 }
 
 pub fn is_id(s: &str) -> bool {
@@ -81,7 +84,10 @@ impl Key {
     }
 
     pub fn auth_hash(&self) -> String {
-        Sha256::digest(*self.derive("auth")).iter().map(|b| format!("{b:02x}")).collect()
+        Sha256::digest(*self.derive("auth"))
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect()
     }
 
     fn cipher(&self) -> Aes256Gcm {
@@ -99,11 +105,21 @@ pub fn seal(id: &str, key: &Key, vars: &Vars) -> String {
 
 fn seal_with_nonce(id: &str, key: &Key, vars: &Vars, nonce: [u8; 12]) -> String {
     let plain = Zeroizing::new(
-        serde_json::to_vec(&Payload1 { v: 1, vars: vars.clone() }).expect("serializable"),
+        serde_json::to_vec(&Payload1 {
+            v: 1,
+            vars: vars.clone(),
+        })
+        .expect("serializable"),
     );
     let ct = key
         .cipher()
-        .encrypt(Nonce::from_slice(&nonce), Payload { msg: &plain, aad: &aad(id) })
+        .encrypt(
+            Nonce::from_slice(&nonce),
+            Payload {
+                msg: &plain,
+                aad: &aad(id),
+            },
+        )
         .expect("AES-GCM encryption");
     let mut out = Vec::with_capacity(1 + 12 + ct.len());
     out.push(VERSION);
@@ -119,11 +135,22 @@ pub fn unseal(id: &str, key: &Key, blob: &str) -> Result<Vars, Error> {
     }
     let plain = Zeroizing::new(
         key.cipher()
-            .decrypt(Nonce::from_slice(&raw[1..13]), Payload { msg: &raw[13..], aad: &aad(id) })
+            .decrypt(
+                Nonce::from_slice(&raw[1..13]),
+                Payload {
+                    msg: &raw[13..],
+                    aad: &aad(id),
+                },
+            )
             .map_err(|_| Error::Decrypt)?,
     );
     let doc: Payload1 = serde_json::from_slice(&plain).map_err(|_| Error::BadEnvelope)?;
-    if doc.v != 1 || doc.vars.iter().any(|(n, v)| !is_name(n) || v.contains('\0')) {
+    if doc.v != 1
+        || doc
+            .vars
+            .iter()
+            .any(|(n, v)| !is_name(n) || v.contains('\0'))
+    {
         return Err(Error::BadEnvelope);
     }
     Ok(doc.vars)
@@ -164,7 +191,10 @@ mod tests {
         let v = vector();
         let key = Key::parse(&v.key).unwrap();
         assert_eq!(unseal("zzzzzzzzzzzz", &key, &v.blob), Err(Error::Decrypt));
-        assert_eq!(unseal(&v.id, &Key::generate(), &v.blob), Err(Error::Decrypt));
+        assert_eq!(
+            unseal(&v.id, &Key::generate(), &v.blob),
+            Err(Error::Decrypt)
+        );
     }
 
     #[test]

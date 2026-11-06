@@ -21,7 +21,9 @@ impl ApiError {
                 "未找到：已被打开、撤销、过期，或密钥错误"
             ),
             ApiError::Conflict => t!("id collision, try again", "id 冲突，请重试"),
-            ApiError::Status(code, err) => t!("server replied {} {}", "服务端返回 {} {}", code, err),
+            ApiError::Status(code, err) => {
+                t!("server replied {} {}", "服务端返回 {} {}", code, err)
+            }
             ApiError::Network(e) => t!("cannot reach {}: {}", "无法连接 {}：{}", server, e),
         }
     }
@@ -83,7 +85,10 @@ impl Client {
             .timeout(Duration::from_secs(30))
             .user_agent(concat!("envclip/", env!("CARGO_PKG_VERSION")))
             .build();
-        Client { base: base.trim_end_matches('/').to_string(), agent }
+        Client {
+            base: base.trim_end_matches('/').to_string(),
+            agent,
+        }
     }
 
     pub fn base(&self) -> &str {
@@ -96,8 +101,14 @@ impl Client {
 
     pub fn create(&self, id: &str, auth_hash: &str, blob: &str, ttl: u64) -> Result<u64, ApiError> {
         let body = json!({ "id": id, "auth_hash": auth_hash, "blob": blob, "ttl": ttl });
-        let res = self.agent.post(&self.url("/api/clips")).send_json(body).map_err(map)?;
-        let c: Created = res.into_json().map_err(|e| ApiError::Network(e.to_string()))?;
+        let res = self
+            .agent
+            .post(&self.url("/api/clips"))
+            .send_json(body)
+            .map_err(map)?;
+        let c: Created = res
+            .into_json()
+            .map_err(|e| ApiError::Network(e.to_string()))?;
         Ok(c.expires_at)
     }
 
@@ -107,7 +118,9 @@ impl Client {
             .post(&self.url(&format!("/api/clips/{id}/open")))
             .send_json(json!({ "auth": auth }))
             .map_err(map)?;
-        let o: Opened = res.into_json().map_err(|e| ApiError::Network(e.to_string()))?;
+        let o: Opened = res
+            .into_json()
+            .map_err(|e| ApiError::Network(e.to_string()))?;
         Ok(o.blob)
     }
 

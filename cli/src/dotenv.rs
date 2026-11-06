@@ -3,7 +3,11 @@
 use crate::crypto::{is_name, Vars};
 
 pub fn parse(text: &str) -> Result<Vars, String> {
-    let s: Vec<char> = text.replace("\r\n", "\n").replace('\r', "\n").chars().collect();
+    let s: Vec<char> = text
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .chars()
+        .collect();
     let (mut i, mut line) = (0usize, 1usize);
     let mut out = Vars::new();
     let eol = |i: &mut usize| {
@@ -36,7 +40,11 @@ pub fn parse(text: &str) -> Result<Vars, String> {
             j += 1;
         }
         if j >= s.len() || s[j] != '=' {
-            return Err(t!("line {}: expected NAME=value", "第 {} 行：应为 NAME=value", start));
+            return Err(t!(
+                "line {}: expected NAME=value",
+                "第 {} 行：应为 NAME=value",
+                start
+            ));
         }
         let raw: String = s[i..j].iter().collect();
         let raw = raw.trim();
@@ -45,7 +53,12 @@ pub fn parse(text: &str) -> Result<Vars, String> {
             .filter(|r| r.starts_with([' ', '\t']))
             .map_or(raw, str::trim_start);
         if !is_name(name) {
-            return Err(t!("line {}: bad name \"{}\"", "第 {} 行：变量名无效 \"{}\"", start, name));
+            return Err(t!(
+                "line {}: bad name \"{}\"",
+                "第 {} 行：变量名无效 \"{}\"",
+                start,
+                name
+            ));
         }
         i = j + 1;
         while i < s.len() && (s[i] == ' ' || s[i] == '\t') {
@@ -58,7 +71,11 @@ pub fn parse(text: &str) -> Result<Vars, String> {
             i += 1;
             loop {
                 let Some(&ch) = s.get(i) else {
-                    return Err(t!("line {}: unterminated quote", "第 {} 行：引号未闭合", start));
+                    return Err(t!(
+                        "line {}: unterminated quote",
+                        "第 {} 行：引号未闭合",
+                        start
+                    ));
                 };
                 i += 1;
                 if ch == q {
@@ -93,10 +110,13 @@ pub fn parse(text: &str) -> Result<Vars, String> {
                 j += 1;
             }
             let rest: String = s[i..j].iter().collect();
-            let cut = rest.char_indices().find(|&(k, c)| {
-                c == '#' && rest[..k].ends_with(|p: char| p.is_whitespace())
-            });
-            value = cut.map_or(rest.as_str(), |(k, _)| &rest[..k]).trim().to_string();
+            let cut = rest
+                .char_indices()
+                .find(|&(k, c)| c == '#' && rest[..k].ends_with(|p: char| p.is_whitespace()));
+            value = cut
+                .map_or(rest.as_str(), |(k, _)| &rest[..k])
+                .trim()
+                .to_string();
             i = j;
         }
         out.push((name.to_string(), value));
