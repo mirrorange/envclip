@@ -1,0 +1,18 @@
+{
+  "id": "0123456789ab",
+  "key": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+  "nonce": "oKGio6Slpqeoqaqr",
+  "vars": [
+    [
+      "API_TOKEN",
+      "tok_🔑_secret"
+    ],
+    [
+      "MULTI",
+      "line one\nline 'two'"
+    ]
+  ],
+  "auth": "lF5RKHo_-YSeJJzkVmHm8jKVxh22BEZuK9L3dRQ5AKM",
+  "auth_hash": "7245c7f4adf7b042bb14a70fe47f95997242d3821a36bd4f06263885c1666b5f",
+  "blob": "AaChoqOkpaanqKmqqwWyhFhRjCdnOO8jaE4oETsUMHPCe4y3vPEJWJnhH8QYFbM5-aGQb-7MjvaKyIt4XCiY1GbGmJn_wum3ves_WWPX4pAU0fRBOc5udUNzBQhlYKR-V6ZGZWE16kFxJdRQqmk"
+}
