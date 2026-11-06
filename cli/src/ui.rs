@@ -76,11 +76,12 @@ pub fn parse_duration(s: &str) -> Option<Duration> {
 
 pub fn human(d: Duration) -> String {
     let s = d.as_secs();
+    let round = |unit: u64| (s + unit / 2) / unit;
     match s {
         0..=119 => format!("{s}s"),
-        120..=7199 => format!("{}m", s / 60),
-        7200..=172_799 => format!("{}h", s / 3600),
-        _ => format!("{}d", s / 86400),
+        120..=7199 => format!("{}m", round(60)),
+        7200..=172_799 => format!("{}h", round(3600)),
+        _ => format!("{}d", round(86400)),
     }
 }
 
@@ -104,6 +105,7 @@ mod tests {
         assert_eq!(parse_duration("0h"), None);
         assert_eq!(parse_duration("x"), None);
         assert_eq!(human(Duration::from_secs(86400)), "24h");
+        assert_eq!(human(Duration::from_secs(43_199)), "12h");
     }
 
     #[test]

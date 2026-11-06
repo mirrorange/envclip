@@ -152,6 +152,14 @@ pub fn put(vars: &[Var], src: &str, hold: Duration) -> Result<(), String> {
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let mut cmd = Command::new(exe);
     cmd.arg("__agent").stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
+    // Start from a clean environment so nothing sensitive (e.g. ENVCLIP_KEY)
+    // lingers in the long-lived agent's /proc/<pid>/environ.
+    cmd.env_clear();
+    for k in ["ENVCLIP_SOCK", "XDG_RUNTIME_DIR", "TMPDIR", "ENVCLIP_LANG", "LC_ALL", "LC_MESSAGES", "LANG"] {
+        if let Some(v) = std::env::var_os(k) {
+            cmd.env(k, v);
+        }
+    }
     unsafe {
         cmd.pre_exec(|| {
             libc::setsid();
