@@ -124,3 +124,7 @@ cd worker && npm ci && npm test         # 网页端加密与 .env 解析
 npm run db:migrate:local && npm run dev # http://localhost:8787
 ENVCLIP_SERVER=http://localhost:8787 cargo run -- push FOO
 ```
+
+## 许可证
+
+[MIT](LICENSE)

@@ -138,3 +138,7 @@ cd worker && npm ci && npm test         # web crypto and .env parser
 npm run db:migrate:local && npm run dev # http://localhost:8787
 ENVCLIP_SERVER=http://localhost:8787 cargo run -- push FOO
 ```
+
+## License
+
+[MIT](LICENSE)
