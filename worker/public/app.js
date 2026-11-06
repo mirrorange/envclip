@@ -27,7 +27,10 @@ for (const b of document.querySelectorAll(".lang")) {
 }
 
 const human = (s) =>
-  s < 120 ? `${s}s` : s < 7200 ? `${Math.round(s / 60)}m` : s < 172800 ? `${Math.round(s / 3600)}h` : `${Math.round(s / 86400)}d`;
+  s < 120 ? `${s}s`
+  : s < 3600 || (s < 7200 && s % 3600) ? `${Math.round(s / 60)}m`
+  : s < 172800 ? `${Math.round(s / 3600)}h`
+  : `${Math.round(s / 86400)}d`;
 
 function say(id, text, kind = "") {
   const el = $(id);
