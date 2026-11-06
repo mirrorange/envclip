@@ -70,7 +70,7 @@ pub fn default_server() -> Option<String> {
     std::env::var("ENVCLIP_SERVER")
         .ok()
         .filter(|s| !s.is_empty())
-        .or_else(|| option_env!("ENVCLIP_DEFAULT_SERVER").map(str::to_string))
+        .or_else(|| option_env!("ENVCLIP_DEFAULT_SERVER").filter(|s| !s.is_empty()).map(str::to_string))
 }
 
 impl Client {

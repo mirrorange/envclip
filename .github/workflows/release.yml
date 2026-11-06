@@ -1,0 +1,60 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-musl, asset: envclip-linux-x86_64, os: ubuntu-latest, zig: true }
+          - { target: aarch64-unknown-linux-musl, asset: envclip-linux-aarch64, os: ubuntu-latest, zig: true }
+          - { target: x86_64-apple-darwin, asset: envclip-darwin-x86_64, os: macos-latest }
+          - { target: aarch64-apple-darwin, asset: envclip-darwin-aarch64, os: macos-latest }
+    runs-on: ${{ matrix.os }}
+    env:
+      # Baked-in default for `envclip send`; set the repository variable ENVCLIP_SERVER.
+      ENVCLIP_DEFAULT_SERVER: ${{ vars.ENVCLIP_SERVER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - if: matrix.zig
+        run: pip install ziglang cargo-zigbuild
+      - name: build
+        working-directory: cli
+        run: |
+          if [ "${{ matrix.zig }}" = "true" ]; then
+            cargo zigbuild --release --locked --target ${{ matrix.target }}
+          else
+            cargo build --release --locked --target ${{ matrix.target }}
+          fi
+          mkdir -p ../dist
+          cp target/${{ matrix.target }}/release/envclip ../dist/${{ matrix.asset }}
+          cd ../dist
+          if command -v sha256sum >/dev/null; then sha256sum ${{ matrix.asset }} > ${{ matrix.asset }}.sha256
+          else shasum -a 256 ${{ matrix.asset }} > ${{ matrix.asset }}.sha256; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

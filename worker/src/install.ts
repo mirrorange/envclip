@@ -82,6 +82,7 @@ if [ -n "$DROP" ]; then
   printf '%s' "$key" | ENVCLIP_KEY= ENVCLIP_SERVER="$ORIGIN" "$bin" claim "$ORIGIN/c/$DROP"
 else
   say "✓ envclip is ready — run: $bin help"
+  say "  to send from this machine: export ENVCLIP_SERVER=$ORIGIN"
 fi
 `;
 }
