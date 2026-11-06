@@ -1,0 +1,30 @@
+[package]
+name = "envclip"
+version = "0.1.0"
+edition = "2024"
+description = "Hand secrets to an AI agent's sandbox: end-to-end encrypted, burn after reading, no echo."
+license = "MIT"
+repository = "https://github.com/mirrorange/envclip"
+rust-version = "1.88"
+
+[dependencies]
+aes-gcm = "0.11.1"
+base64 = "0.23.1"
+getrandom = "0.4.3"
+hkdf = "0.13.0"
+libc = "0.2"
+rpassword = "7.5.4"
+rustls-native-certs = "0.8.5"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+ureq = { version = "3.5.1", default-features = false, features = ["rustls", "gzip"] }
+webpki-root-certs = "1.0.11"
+zeroize = "1.9.1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
