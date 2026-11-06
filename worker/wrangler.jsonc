@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "envclip",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "envclip",
+      // `npx wrangler d1 create envclip`, then paste the id here
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": {
+    "crons": ["17 * * * *"]
+  },
+  "vars": {
+    // where /dl/:asset fetches CLI binaries from
+    "RELEASE_BASE": "https://github.com/mirrorange/envclip/releases/latest/download"
+  },
+  "observability": { "enabled": true }
+}
