@@ -40,7 +40,11 @@ main() {
 
   bin=$(command -v envclip 2>/dev/null || true)
   if [ -z "$bin" ] || [ "\${ENVCLIP_REINSTALL:-}" = 1 ]; then
-    dir="\${ENVCLIP_BIN_DIR:-$HOME/.local/bin}"
+    dir="\${ENVCLIP_BIN_DIR:-}"
+    if [ -z "$dir" ]; then
+      dir="$HOME/.local/bin"
+      [ -d /usr/local/bin ] && [ -w /usr/local/bin ] && dir=/usr/local/bin
+    fi
     mkdir -p "$dir"
     tmp=$(mktemp -d)
     trap 'rm -rf "$tmp"' EXIT
