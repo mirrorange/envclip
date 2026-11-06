@@ -2,6 +2,7 @@ export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
   RELEASE_BASE: string;
+  LIMITER?: RateLimit;
 }
 
 const ID_RE = /^[0-9abcdefghjkmnpqrstvwxyz]{12}$/;
@@ -102,6 +103,11 @@ async function revoke(req: Request, id: string, env: Env): Promise<Response> {
 }
 
 export async function api(req: Request, env: Env, path: string): Promise<Response> {
+  if (req.method !== "GET" && env.LIMITER) {
+    const ip = req.headers.get("cf-connecting-ip") ?? "local";
+    const { success } = await env.LIMITER.limit({ key: ip });
+    if (!success) return fail(429, "rate_limited");
+  }
   if (path === "/api/clips") {
     return req.method === "POST" ? create(req, env) : fail(405, "method_not_allowed");
   }

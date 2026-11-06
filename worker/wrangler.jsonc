@@ -17,6 +17,10 @@
       "migrations_dir": "migrations"
     }
   ],
+  // per-IP limits for creating, opening and revoking clips
+  "ratelimits": [
+    { "name": "LIMITER", "namespace_id": "4201", "simple": { "limit": 30, "period": 60 } }
+  ],
   "triggers": {
     "crons": ["17 * * * *"]
   },
