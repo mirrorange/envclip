@@ -1,0 +1,23 @@
+[package]
+name = "envclip"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+description = "Hand secrets to your agent, not to the chat. End-to-end encrypted, burn-after-reading env vars."
+repository = "https://github.com/mirrorange/envclip"
+license = "MIT"
+
+[dependencies]
+aes-gcm = "0.10"
+base64 = "0.22"
+getrandom = "0.2"
+hkdf = "0.12"
+rpassword = "7"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-native-certs = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+ureq = { version = "2.12", default-features = false, features = ["tls", "json"] }
+webpki-roots = "1"
+zeroize = "1"
